@@ -1,0 +1,41 @@
+name: Build
+
+on: push
+
+jobs:
+  test-and-build:
+    strategy:
+      matrix:
+        include:
+          - platform: windows-latest
+            binary_name: scribblers-x64.exe
+          - platform: ubuntu-latest
+            binary_name: scribblers-linux-x64
+          - platform: macos-latest
+            binary_name: scribblers-macos-x64
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21.x
+
+      - name: Run tests
+        shell: bash
+        run: |
+          go test -v -race -covermode=atomic ./...
+
+      - name: Build artifact
+        shell: bash
+        run: |
+          go build -o ${{ matrix.binary_name }} ./cmd/scribblers
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.binary_name }}
+          path: ./${{ matrix.binary_name }}
